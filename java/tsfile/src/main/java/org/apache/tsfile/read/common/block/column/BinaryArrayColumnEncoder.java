@@ -45,7 +45,9 @@ public class BinaryArrayColumnEncoder implements ColumnEncoder {
     //    | int32         | bytes |
     //    +---------------+-------+
 
-    if (!TSDataType.TEXT.equals(dataType)) {
+    if (!TSDataType.TEXT.equals(dataType)
+        && !TSDataType.BLOB.equals(dataType)
+        && !TSDataType.STRING.equals(dataType)) {
       throw new IllegalArgumentException("Invalid data type: " + dataType);
     }
 
@@ -78,7 +80,9 @@ public class BinaryArrayColumnEncoder implements ColumnEncoder {
 
     TSDataType dataType = column.getDataType();
     int positionCount = column.getPositionCount();
-    if (TSDataType.TEXT.equals(dataType)) {
+    if (TSDataType.TEXT.equals(dataType)
+        || TSDataType.BLOB.equals(dataType)
+        || TSDataType.STRING.equals(dataType)) {
       for (int i = 0; i < positionCount; i++) {
         if (!column.isNull(i)) {
           Binary binary = column.getBinary(i);

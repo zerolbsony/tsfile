@@ -142,19 +142,23 @@ public class NullColumn implements Column {
       case BOOLEAN:
         return new RunLengthEncodedColumn(BooleanColumnBuilder.NULL_VALUE_BLOCK, positionCount);
       case INT32:
-      case DATE:
         return new RunLengthEncodedColumn(IntColumnBuilder.NULL_VALUE_BLOCK, positionCount);
+      case DATE:
+        return new RunLengthEncodedColumn(DateColumnBuilder.NULL_VALUE_BLOCK, positionCount);
       case INT64:
-      case TIMESTAMP:
         return new RunLengthEncodedColumn(LongColumnBuilder.NULL_VALUE_BLOCK, positionCount);
+      case TIMESTAMP:
+        return new RunLengthEncodedColumn(TimestampColumnBuilder.NULL_VALUE_BLOCK, positionCount);
       case FLOAT:
         return new RunLengthEncodedColumn(FloatColumnBuilder.NULL_VALUE_BLOCK, positionCount);
       case DOUBLE:
         return new RunLengthEncodedColumn(DoubleColumnBuilder.NULL_VALUE_BLOCK, positionCount);
       case TEXT:
-      case BLOB:
-      case STRING:
         return new RunLengthEncodedColumn(BinaryColumnBuilder.NULL_VALUE_BLOCK, positionCount);
+      case BLOB:
+        return new RunLengthEncodedColumn(BlobColumnBuilder.NULL_VALUE_BLOCK, positionCount);
+      case STRING:
+        return new RunLengthEncodedColumn(StringColumnBuilder.NULL_VALUE_BLOCK, positionCount);
       default:
         throw new IllegalArgumentException("Unknown data type: " + dataType);
     }
