@@ -1,0 +1,175 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.tsfile.read.common.block.column;
+
+import org.apache.tsfile.block.column.Column;
+import org.apache.tsfile.block.column.ColumnBuilder;
+import org.apache.tsfile.block.column.ColumnBuilderStatus;
+import org.apache.tsfile.enums.TSDataType;
+import org.apache.tsfile.utils.Binary;
+import org.apache.tsfile.utils.RamUsageEstimator;
+import org.apache.tsfile.utils.TsPrimitiveType;
+import org.apache.tsfile.write.UnSupportedDataTypeException;
+
+import java.util.Arrays;
+
+import static java.lang.Math.max;
+import static org.apache.tsfile.read.common.block.column.ColumnUtil.calculateBlockResetSize;
+import static org.apache.tsfile.utils.RamUsageEstimator.sizeOf;
+
+public abstract class AbstractBinaryColumnBuilder implements ColumnBuilder {
+
+  protected static final long INSTANCE_SIZE =
+      RamUsageEstimator.shallowSizeOfInstance(AbstractBinaryColumnBuilder.class);
+
+  protected final ColumnBuilderStatus columnBuilderStatus;
+  public static final BinaryColumn NULL_VALUE_BLOCK =
+      new BinaryColumn(0, 1, new boolean[] {true}, new Binary[1]);
+
+  protected boolean initialized;
+  protected final int initialEntryCount;
+
+  protected int positionCount;
+  protected boolean hasNullValue;
+  protected boolean hasNonNullValue;
+
+  // it is assumed that these arrays are the same length
+  protected boolean[] valueIsNull = new boolean[0];
+  protected Binary[] values = new Binary[0];
+
+  protected long arraysRetainedSizeInBytes;
+
+  public AbstractBinaryColumnBuilder(ColumnBuilderStatus columnBuilderStatus, int expectedEntries) {
+    this.initialEntryCount = max(expectedEntries, 1);
+    this.columnBuilderStatus = columnBuilderStatus;
+    updateArraysDataSize();
+  }
+
+  @Override
+  public int getPositionCount() {
+    return positionCount;
+  }
+
+  @Override
+  public ColumnBuilder writeBinary(Binary value) {
+    if (values.length <= positionCount) {
+      growCapacity();
+    }
+
+    values[positionCount] = value;
+
+    hasNonNullValue = true;
+    positionCount++;
+    if (columnBuilderStatus != null) {
+      columnBuilderStatus.addBytes(
+          BinaryColumn.SHALLOW_SIZE_IN_BYTES_PER_POSITION
+              + (value == null ? 0 : (int) value.ramBytesUsed()));
+    }
+    return this;
+  }
+
+  /** Write an Object to the current entry, which should be the Binary type; */
+  @Override
+  public ColumnBuilder writeObject(Object value) {
+    if (value instanceof Binary) {
+      writeBinary((Binary) value);
+      return this;
+    }
+    throw new UnSupportedDataTypeException("BinaryColumn only support Binary data type");
+  }
+
+  @Override
+  public ColumnBuilder write(Column column, int index) {
+    return writeBinary(column.getBinary(index));
+  }
+
+  @Override
+  public ColumnBuilder writeTsPrimitiveType(TsPrimitiveType value) {
+    return writeBinary(value.getBinary());
+  }
+
+  @Override
+  public ColumnBuilder appendNull() {
+    if (values.length <= positionCount) {
+      growCapacity();
+    }
+
+    valueIsNull[positionCount] = true;
+
+    hasNullValue = true;
+    positionCount++;
+    if (columnBuilderStatus != null) {
+      columnBuilderStatus.addBytes(BinaryColumn.SHALLOW_SIZE_IN_BYTES_PER_POSITION);
+    }
+    return this;
+  }
+
+  @Override
+  public Column build() {
+    if (!hasNonNullValue) {
+      return new RunLengthEncodedColumn(NULL_VALUE_BLOCK, positionCount);
+    }
+    if (getDataType() == TSDataType.TEXT) {
+      return new BinaryColumn(0, positionCount, hasNullValue ? valueIsNull : null, values);
+    } else if (getDataType() == TSDataType.STRING) {
+      return new StringColumn(0, positionCount, hasNullValue ? valueIsNull : null, values);
+    } else {
+      return new BlobColumn(0, positionCount, hasNullValue ? valueIsNull : null, values);
+    }
+  }
+
+  @Override
+  public abstract TSDataType getDataType();
+
+  @Override
+  public long getRetainedSizeInBytes() {
+    long size = INSTANCE_SIZE + arraysRetainedSizeInBytes;
+    if (columnBuilderStatus != null) {
+      size += ColumnBuilderStatus.INSTANCE_SIZE;
+    }
+    return size;
+  }
+
+  @Override
+  public ColumnBuilder newColumnBuilderLike(ColumnBuilderStatus columnBuilderStatus) {
+    return instance(columnBuilderStatus, calculateBlockResetSize(positionCount));
+  }
+
+  protected void growCapacity() {
+    int newSize;
+    if (initialized) {
+      newSize = ColumnUtil.calculateNewArraySize(values.length);
+    } else {
+      newSize = initialEntryCount;
+      initialized = true;
+    }
+
+    valueIsNull = Arrays.copyOf(valueIsNull, newSize);
+    values = Arrays.copyOf(values, newSize);
+    updateArraysDataSize();
+  }
+
+  protected void updateArraysDataSize() {
+    arraysRetainedSizeInBytes = sizeOf(valueIsNull) + sizeOf(values);
+  }
+
+  protected abstract AbstractBinaryColumnBuilder instance(
+      ColumnBuilderStatus columnBuilderStatus, int expectedEntries);
+}

@@ -41,7 +41,6 @@ public class Int64ArrayColumnEncoder implements ColumnEncoder {
     boolean[] nullIndicators = ColumnEncoder.deserializeNullIndicators(input, positionCount);
     switch (dataType) {
       case INT64:
-      case TIMESTAMP:
         long[] values = new long[positionCount];
         if (nullIndicators == null) {
           for (int i = 0; i < positionCount; i++) {
@@ -55,6 +54,20 @@ public class Int64ArrayColumnEncoder implements ColumnEncoder {
           }
         }
         return new LongColumn(0, positionCount, nullIndicators, values);
+      case TIMESTAMP:
+        long[] timestampValues = new long[positionCount];
+        if (nullIndicators == null) {
+          for (int i = 0; i < positionCount; i++) {
+            timestampValues[i] = input.getLong();
+          }
+        } else {
+          for (int i = 0; i < positionCount; i++) {
+            if (!nullIndicators[i]) {
+              timestampValues[i] = input.getLong();
+            }
+          }
+        }
+        return new TimestampColumn(0, positionCount, nullIndicators, timestampValues);
       case DOUBLE:
         double[] doubleValues = new double[positionCount];
         if (nullIndicators == null) {

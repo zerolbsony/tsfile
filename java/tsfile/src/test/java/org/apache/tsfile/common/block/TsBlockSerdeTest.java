@@ -121,10 +121,10 @@ public class TsBlockSerdeTest {
       assertEquals(TSDataType.DOUBLE, tsBlock.getColumn(3).getDataType());
       assertEquals(TSDataType.BOOLEAN, tsBlock.getColumn(4).getDataType());
       assertEquals(TSDataType.TEXT, tsBlock.getColumn(5).getDataType());
-      assertEquals(TSDataType.INT32, tsBlock.getColumn(6).getDataType());
-      assertEquals(TSDataType.INT64, tsBlock.getColumn(7).getDataType());
-      assertEquals(TSDataType.TEXT, tsBlock.getColumn(8).getDataType());
-      assertEquals(TSDataType.TEXT, tsBlock.getColumn(9).getDataType());
+      assertEquals(TSDataType.DATE, tsBlock.getColumn(6).getDataType());
+      assertEquals(TSDataType.TIMESTAMP, tsBlock.getColumn(7).getDataType());
+      assertEquals(TSDataType.BLOB, tsBlock.getColumn(8).getDataType());
+      assertEquals(TSDataType.STRING, tsBlock.getColumn(9).getDataType());
       assertEquals(positionCount, tsBlock.getPositionCount());
       assertEquals(ColumnEncoding.INT32_ARRAY, tsBlock.getColumn(0).getEncoding());
       assertEquals(ColumnEncoding.INT32_ARRAY, tsBlock.getColumn(1).getEncoding());

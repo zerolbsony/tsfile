@@ -42,7 +42,6 @@ public class Int32ArrayColumnEncoder implements ColumnEncoder {
 
     switch (dataType) {
       case INT32:
-      case DATE:
         int[] intValues = new int[positionCount];
         if (nullIndicators == null) {
           for (int i = 0; i < positionCount; i++) {
@@ -56,6 +55,20 @@ public class Int32ArrayColumnEncoder implements ColumnEncoder {
           }
         }
         return new IntColumn(0, positionCount, nullIndicators, intValues);
+      case DATE:
+        int[] dateValues = new int[positionCount];
+        if (nullIndicators == null) {
+          for (int i = 0; i < positionCount; i++) {
+            dateValues[i] = input.getInt();
+          }
+        } else {
+          for (int i = 0; i < positionCount; i++) {
+            if (!nullIndicators[i]) {
+              dateValues[i] = input.getInt();
+            }
+          }
+        }
+        return new DateColumn(0, positionCount, nullIndicators, dateValues);
       case FLOAT:
         float[] floatValues = new float[positionCount];
         if (nullIndicators == null) {

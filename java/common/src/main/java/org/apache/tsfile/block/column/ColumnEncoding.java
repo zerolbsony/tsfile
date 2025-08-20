@@ -26,11 +26,11 @@ import java.nio.ByteBuffer;
 public enum ColumnEncoding {
   /** BOOLEAN. */
   BYTE_ARRAY((byte) 0),
-  /** INT32, FLOAT */
+  /** INT32, FLOAT, DATE */
   INT32_ARRAY((byte) 1),
-  /** INT64, DOUBLE. */
+  /** INT64, DOUBLE, TIMESTAMP. */
   INT64_ARRAY((byte) 2),
-  /** TEXT. */
+  /** TEXT, BLOB, STRING. */
   BINARY_ARRAY((byte) 3),
   /** All data types. */
   RLE((byte) 4),

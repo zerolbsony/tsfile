@@ -70,7 +70,13 @@ public class BinaryArrayColumnEncoder implements ColumnEncoder {
         }
       }
     }
-    return new BinaryColumn(0, positionCount, nullIndicators, values);
+    if (TSDataType.STRING.equals(dataType)) {
+      return new StringColumn(0, positionCount, nullIndicators, values);
+    } else if (TSDataType.BLOB.equals(dataType)) {
+      return new BlobColumn(0, positionCount, nullIndicators, values);
+    } else {
+      return new BinaryColumn(0, positionCount, nullIndicators, values);
+    }
   }
 
   @Override

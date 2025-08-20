@@ -19,114 +19,13 @@
 
 package org.apache.tsfile.read.common.block.column;
 
-import org.apache.tsfile.block.column.Column;
-import org.apache.tsfile.block.column.ColumnBuilder;
 import org.apache.tsfile.block.column.ColumnBuilderStatus;
 import org.apache.tsfile.enums.TSDataType;
-import org.apache.tsfile.utils.Binary;
-import org.apache.tsfile.utils.RamUsageEstimator;
-import org.apache.tsfile.utils.TsPrimitiveType;
-import org.apache.tsfile.write.UnSupportedDataTypeException;
 
-import java.util.Arrays;
-
-import static java.lang.Math.max;
-import static org.apache.tsfile.read.common.block.column.ColumnUtil.calculateBlockResetSize;
-import static org.apache.tsfile.utils.RamUsageEstimator.sizeOf;
-
-public class BinaryColumnBuilder implements ColumnBuilder {
-
-  private static final long INSTANCE_SIZE =
-      RamUsageEstimator.shallowSizeOfInstance(BinaryColumnBuilder.class);
-
-  private final ColumnBuilderStatus columnBuilderStatus;
-  public static final BinaryColumn NULL_VALUE_BLOCK =
-      new BinaryColumn(0, 1, new boolean[] {true}, new Binary[1]);
-
-  private boolean initialized;
-  private final int initialEntryCount;
-
-  private int positionCount;
-  private boolean hasNullValue;
-  private boolean hasNonNullValue;
-
-  // it is assumed that these arrays are the same length
-  private boolean[] valueIsNull = new boolean[0];
-  private Binary[] values = new Binary[0];
-
-  private long arraysRetainedSizeInBytes;
+public class BinaryColumnBuilder extends AbstractBinaryColumnBuilder {
 
   public BinaryColumnBuilder(ColumnBuilderStatus columnBuilderStatus, int expectedEntries) {
-    this.initialEntryCount = max(expectedEntries, 1);
-    this.columnBuilderStatus = columnBuilderStatus;
-    updateArraysDataSize();
-  }
-
-  @Override
-  public int getPositionCount() {
-    return positionCount;
-  }
-
-  @Override
-  public ColumnBuilder writeBinary(Binary value) {
-    if (values.length <= positionCount) {
-      growCapacity();
-    }
-
-    values[positionCount] = value;
-
-    hasNonNullValue = true;
-    positionCount++;
-    if (columnBuilderStatus != null) {
-      columnBuilderStatus.addBytes(
-          BinaryColumn.SHALLOW_SIZE_IN_BYTES_PER_POSITION
-              + (value == null ? 0 : (int) value.ramBytesUsed()));
-    }
-    return this;
-  }
-
-  /** Write an Object to the current entry, which should be the Binary type; */
-  @Override
-  public ColumnBuilder writeObject(Object value) {
-    if (value instanceof Binary) {
-      writeBinary((Binary) value);
-      return this;
-    }
-    throw new UnSupportedDataTypeException("BinaryColumn only support Binary data type");
-  }
-
-  @Override
-  public ColumnBuilder write(Column column, int index) {
-    return writeBinary(column.getBinary(index));
-  }
-
-  @Override
-  public ColumnBuilder writeTsPrimitiveType(TsPrimitiveType value) {
-    return writeBinary(value.getBinary());
-  }
-
-  @Override
-  public ColumnBuilder appendNull() {
-    if (values.length <= positionCount) {
-      growCapacity();
-    }
-
-    valueIsNull[positionCount] = true;
-
-    hasNullValue = true;
-    positionCount++;
-    if (columnBuilderStatus != null) {
-      columnBuilderStatus.addBytes(BinaryColumn.SHALLOW_SIZE_IN_BYTES_PER_POSITION);
-    }
-    return this;
-  }
-
-  @Override
-  public Column build() {
-    if (!hasNonNullValue) {
-      return new RunLengthEncodedColumn(NULL_VALUE_BLOCK, positionCount);
-    }
-    return new BinaryColumn(0, positionCount, hasNullValue ? valueIsNull : null, values);
+    super(columnBuilderStatus, expectedEntries);
   }
 
   @Override
@@ -135,34 +34,8 @@ public class BinaryColumnBuilder implements ColumnBuilder {
   }
 
   @Override
-  public long getRetainedSizeInBytes() {
-    long size = INSTANCE_SIZE + arraysRetainedSizeInBytes;
-    if (columnBuilderStatus != null) {
-      size += ColumnBuilderStatus.INSTANCE_SIZE;
-    }
-    return size;
-  }
-
-  @Override
-  public ColumnBuilder newColumnBuilderLike(ColumnBuilderStatus columnBuilderStatus) {
-    return new BinaryColumnBuilder(columnBuilderStatus, calculateBlockResetSize(positionCount));
-  }
-
-  private void growCapacity() {
-    int newSize;
-    if (initialized) {
-      newSize = ColumnUtil.calculateNewArraySize(values.length);
-    } else {
-      newSize = initialEntryCount;
-      initialized = true;
-    }
-
-    valueIsNull = Arrays.copyOf(valueIsNull, newSize);
-    values = Arrays.copyOf(values, newSize);
-    updateArraysDataSize();
-  }
-
-  private void updateArraysDataSize() {
-    arraysRetainedSizeInBytes = sizeOf(valueIsNull) + sizeOf(values);
+  protected AbstractBinaryColumnBuilder instance(
+      ColumnBuilderStatus columnBuilderStatus, int expectedEntries) {
+    return new BinaryColumnBuilder(columnBuilderStatus, expectedEntries);
   }
 }
