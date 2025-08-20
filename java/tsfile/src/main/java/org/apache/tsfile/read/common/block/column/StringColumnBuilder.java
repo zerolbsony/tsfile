@@ -36,6 +36,6 @@ public class StringColumnBuilder extends AbstractBinaryColumnBuilder {
   @Override
   protected AbstractBinaryColumnBuilder instance(
       ColumnBuilderStatus columnBuilderStatus, int expectedEntries) {
-    return new BlobColumnBuilder(columnBuilderStatus, expectedEntries);
+    return new StringColumnBuilder(columnBuilderStatus, expectedEntries);
   }
 }
