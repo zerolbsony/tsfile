@@ -107,7 +107,7 @@ public class IntColumn implements Column {
 
   @Override
   public TSDataType getDataType() {
-    return TSDataType.INT32;
+    return dataType;
   }
 
   @Override
