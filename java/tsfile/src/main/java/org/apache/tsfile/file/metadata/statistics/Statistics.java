@@ -239,7 +239,7 @@ public abstract class Statistics<T extends Serializable> {
    */
   @SuppressWarnings("unchecked")
   public void mergeStatistics(Statistics<? extends Serializable> stats) {
-    if (this.getClass() == stats.getClass() || canMerge(stats.getType(), this.getType())) {
+    if (this.getClass().equals(stats.getClass()) || canMerge(stats.getType(), this.getType())) {
       if (!stats.isEmpty) {
         if (stats.startTime < this.startTime) {
           this.startTime = stats.startTime;
